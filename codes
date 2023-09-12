@@ -1,0 +1,167 @@
+//1c
+
+#include<sys/types.h>
+#include<sys/socket.h>
+#include<netdb.h>
+#include<stdio.h>
+#include<string.h>
+#include<unistd.h>
+#include<arpa/inet.h>
+#include<stdlib.h>
+
+int main(int argc,char **argv)
+{
+	int sockfd;
+	char send_line[100];
+	char recv_line[100];
+	struct sockaddr_in serveraddr;
+	sockfd=socket(AF_INET,SOCK_STREAM,0);
+	bzero(&serveraddr,sizeof(serveraddr));
+	serveraddr.sin_family=AF_INET;
+	serveraddr.sin_addr.s_addr=htonl(INADDR_ANY);
+	serveraddr.sin_port=htons(22000);
+	connect(sockfd,(struct sockaddr*) &serveraddr,sizeof(serveraddr));
+	while(1){
+		bzero(send_line,100);
+		bzero(recv_line,100);
+		
+		printf("Enter string: ");
+		fgets(send_line,100,stdin);
+		if (strncmp(send_line,"exit",4)==0)
+		{
+			printf("Exited\n");
+			send(sockfd,send_line,strlen(send_line),0);
+			exit(1);
+		}
+		send(sockfd,send_line,strlen(send_line),0);
+		recv(sockfd,recv_line,100,0);
+		printf("Echo back from server -> %s",recv_line);
+	}
+	close(sockfd);
+	return 0;
+} 
+
+//1s
+#include<sys/types.h>
+#include<sys/socket.h>
+#include<netdb.h>
+#include<stdio.h>
+#include<string.h>
+#include<unistd.h>
+#include<stdlib.h>
+
+int main()
+{
+	int listenfd,commfd;
+	char string[100];
+	struct sockaddr_in serveraddr;
+	listenfd=socket(AF_INET,SOCK_STREAM,0);
+	bzero(&serveraddr,sizeof(serveraddr));
+	serveraddr.sin_family=AF_INET;
+	serveraddr.sin_addr.s_addr=htonl(INADDR_ANY);
+	serveraddr.sin_port=htons(22000);
+	bind(listenfd,(struct sockaddr*)&serveraddr,sizeof(serveraddr));
+	listen(listenfd,10);
+	while(1){
+		commfd=accept(listenfd,(struct sockaddr*)NULL,NULL);
+		while(1){
+			bzero(string,100);
+			recv(commfd,string,100,0);
+			if (strncmp(string,"exit",4)==0)
+			{	
+				printf("Exited\n");
+				exit(1);
+			}
+			printf("Echo back -> %s",string);
+			send(commfd,string,strlen(string),0);
+		}
+		close(commfd);
+	}
+	return 0;
+}
+
+
+//2c
+
+#include<sys/types.h>
+#include<sys/socket.h>
+#include<netdb.h>
+#include<stdio.h>
+#include<string.h>
+#include<unistd.h>
+#include<netinet/in.h>
+#include<stdlib.h>
+
+int main()
+{
+	int sockfd;
+	char buffer[100];
+	struct sockaddr_in serveraddr;
+	sockfd=socket(AF_INET,SOCK_DGRAM,0);
+	bzero(&serveraddr,sizeof(serveraddr));
+	serveraddr.sin_family=AF_INET;
+	serveraddr.sin_addr.s_addr=htonl(INADDR_ANY);
+	serveraddr.sin_port=htons(23000);
+	
+	int length=sizeof(serveraddr);
+	
+		while(1){
+		printf("Enter string: ");
+		bzero(buffer,100);
+		fgets(buffer,100,stdin);		
+		if (strncmp(buffer,"exit",4)==0)
+		{	
+			printf("Exited\n");
+			sendto(sockfd,buffer,sizeof(buffer),0,(struct sockaddr*)&serveraddr, length);
+			exit(1);
+		}
+		sendto(sockfd,buffer,sizeof(buffer),0,(struct sockaddr*)&serveraddr, length);
+		bzero(buffer,100);
+		recvfrom(sockfd,buffer,sizeof(buffer),0,(struct sockaddr*)&serveraddr, &length);
+		printf("Echo back from server -> %s",buffer);
+		}
+	
+	close(sockfd);
+	return 0;
+}
+
+//2s
+#include<sys/types.h>
+#include<sys/socket.h>
+#include<netdb.h>
+#include<stdio.h>
+#include<string.h>
+#include<unistd.h>
+#include<netinet/in.h>
+#include<stdlib.h>
+
+int main()
+{
+	int sockfd;
+	char buffer[100];
+	struct sockaddr_in serveraddr;
+	sockfd=socket(AF_INET,SOCK_DGRAM,0);
+	bzero(&serveraddr,sizeof(serveraddr));
+	serveraddr.sin_family=AF_INET;
+	serveraddr.sin_addr.s_addr=htonl(INADDR_ANY);
+	serveraddr.sin_port=htons(23000);
+	bind(sockfd,(struct sockaddr*)&serveraddr, sizeof(serveraddr));
+	int length=sizeof(serveraddr);
+	
+	while(1)
+	{
+	while(1){
+		bzero(buffer,100);
+		recvfrom(sockfd,buffer,sizeof(buffer),0,(struct sockaddr*)&serveraddr, &length);
+		if (strncmp(buffer,"exit",4)==0)
+		{	
+			printf("Exited\n");
+			exit(1);
+		}
+		printf("Echo back -> %s",buffer); 
+		sendto(sockfd,buffer,sizeof(buffer),0,(struct sockaddr*)&serveraddr, length);
+	}
+	close(sockfd);
+	}
+	return 0;
+}
